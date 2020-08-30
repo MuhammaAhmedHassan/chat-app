@@ -1,17 +1,77 @@
-const { UserInputError } = require("apollo-server");
+const { UserInputError, AuthenticationError } = require("apollo-server");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { User } = require("../models");
+const { JWT_SECRET } = require("../config/env.json");
+const { Op } = require("sequelize");
 
 module.exports = {
   Query: {
     hello: () => "world",
-    getUsers: async () => {
+    getUsers: async (_, __, context) => {
+      let user;
+
       try {
-        const users = await User.findAll();
+        if (context.req && context.req.headers.authorization) {
+          const token = context.req.headers.authorization.split("Bearer ")[1];
+          jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
+            if (err) {
+              throw new AuthenticationError("Unauthenticated");
+            }
+            user = decodedToken;
+
+            console.log(user);
+          });
+        }
+
+        const users = await User.findAll({
+          where: {
+            username: {
+              [Op.ne]: user.username,
+            },
+          },
+        });
 
         return users;
       } catch (err) {
         console.log(err);
+        throw err;
+      }
+    },
+    async login(_, { username, password }) {
+      const { valid, errors } = loginValidate({ username, password });
+
+      try {
+        if (!valid) {
+          throw new UserInputError("Bad input", { errors });
+        }
+
+        const user = await User.findOne({ where: { username } });
+
+        if (!user) {
+          errors.username = "User not found";
+          throw new UserInputError("User not found", { errors });
+        }
+
+        const match = await bcrypt.compare(password, user.password);
+
+        if (!match) {
+          errors.password = "Incorrect password";
+          throw new AuthenticationError("Password is incorrect", { errors });
+        }
+
+        const token = jwt.sign({ username }, JWT_SECRET, {
+          expiresIn: 60 * 60,
+        });
+
+        return {
+          ...user.toJSON(),
+          createdAt: user.createdAt.toISOString(),
+          token,
+        };
+      } catch (err) {
+        console.log(err);
+        throw err;
       }
     },
   },
@@ -68,6 +128,18 @@ module.exports = {
       }
     },
   },
+};
+
+const loginValidate = ({ username, password }) => {
+  const errors = {};
+
+  if (!username.trim()) errors.username = "Username must not be empty";
+  if (!password.trim()) errors.password = "Password must not be empty";
+
+  return {
+    valid: Object.keys(errors).length < 1,
+    errors,
+  };
 };
 
 const registerValidate = ({ username, email, password, confirmPassword }) => {
