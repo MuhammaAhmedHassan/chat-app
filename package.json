@@ -1,0 +1,14 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/MuhammaAhmedHassan/chat-app.git",
+  "author": "Muhammad Ahmed Hassan <ah363702@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "apollo-server": "^2.17.0",
+    "graphql": "^15.3.0",
+    "mysql2": "^2.1.0",
+    "sequelize": "^6.3.4"
+  }
+}
