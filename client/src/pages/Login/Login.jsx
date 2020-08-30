@@ -1,49 +1,38 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Row, Col, Form, Button, Spinner } from "react-bootstrap";
-
 // Component
 import { FormGroupInput } from "../../component";
 
-import { useMutation, gql } from "@apollo/client";
+import { useLazyQuery, gql } from "@apollo/client";
 
-const REGISTER_USER = gql`
-  mutation register(
-    $username: String!
-    $email: String!
-    $password: String!
-    $confirmPassword: String!
-  ) {
-    register(
-      username: $username
-      email: $email
-      password: $password
-      confirmPassword: $confirmPassword
-    ) {
+import { Row, Col, Form, Button, Spinner } from "react-bootstrap";
+
+const LOGIN_USER = gql`
+  query login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
       username
       email
       createdAt
+      token
     }
   }
 `;
 
-function Register({ history }) {
+function Login({ history }) {
   const [variables, setVariables] = useState({
-    email: "",
     username: "",
     password: "",
-    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
 
-  const [registerUser, { loading }] = useMutation(REGISTER_USER, {
-    update(_, __) {
-      // console.log(result);
-      history.push("/login");
-    },
-    onError(err) {
+  const [loginUser, { loading }] = useLazyQuery(LOGIN_USER, {
+    onError: (err) => {
       setErrors(err.graphQLErrors[0].extensions.errors);
+    },
+    onCompleted(data) {
+      localStorage.setItem("token", data.login.token);
+      history.push("/");
     },
   });
 
@@ -51,27 +40,18 @@ function Register({ history }) {
     setVariables({ ...variables, [e.target.name]: e.target.value });
   };
 
-  const submitRegisterForm = (e) => {
+  const submitLoginForm = (e) => {
     e.preventDefault();
 
-    registerUser({ variables });
+    loginUser({ variables });
   };
 
   return (
     <Row className="bg-white py-5 justify-content-center">
       <Col sm={8} md={6} lg={4}>
-        <h1 className="text-center">Register</h1>
+        <h1 className="text-center">Login</h1>
 
-        <Form onSubmit={submitRegisterForm}>
-          <FormGroupInput
-            name="email"
-            label="E-mail"
-            placeholder="Your email address"
-            type="email"
-            value={variables.email}
-            onChange={onChange}
-            error={errors.email}
-          />
+        <Form onSubmit={submitLoginForm}>
           <FormGroupInput
             name="username"
             label="Username"
@@ -90,15 +70,6 @@ function Register({ history }) {
             onChange={onChange}
             error={errors.password}
           />
-          <FormGroupInput
-            name="confirmPassword"
-            label="Password"
-            placeholder="Confirm password"
-            type="password"
-            value={variables.confirmPassword}
-            onChange={onChange}
-            error={errors.confirmPassword}
-          />
           <div className="text-center">
             <Button variant="success" type="submit" disabled={loading}>
               {loading && (
@@ -113,11 +84,11 @@ function Register({ history }) {
                   &nbsp;&nbsp;&nbsp;
                 </>
               )}
-              Register
+              Login
             </Button>
             <br />
             <small>
-              Already have an account? <Link to="/login">Login</Link>
+              Don't have an account? <Link to="/register">Register</Link>
             </small>
           </div>
         </Form>
@@ -126,4 +97,4 @@ function Register({ history }) {
   );
 }
 
-export default Register;
+export default Login;
