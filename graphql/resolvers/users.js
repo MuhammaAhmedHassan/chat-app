@@ -1,35 +1,40 @@
 const { UserInputError, AuthenticationError } = require("apollo-server");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { User } = require("../models");
-const { JWT_SECRET } = require("../config/env.json");
+const { Message, User } = require("../../models");
+const { JWT_SECRET } = require("../../config/env.json");
 const { Op } = require("sequelize");
 
 module.exports = {
   Query: {
     hello: () => "world",
-    getUsers: async (_, __, context) => {
-      let user;
-
+    getUsers: async (_, __, { user }) => {
       try {
-        if (context.req && context.req.headers.authorization) {
-          const token = context.req.headers.authorization.split("Bearer ")[1];
-          jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
-            if (err) {
-              throw new AuthenticationError("Unauthenticated");
-            }
-            user = decodedToken;
+        if (!user) throw new AuthenticationError("Unauthenticated");
 
-            console.log(user);
-          });
-        }
-
-        const users = await User.findAll({
+        let users = await User.findAll({
+          attributes: ["username", "imageUrl", "createdAt"],
           where: {
             username: {
               [Op.ne]: user.username,
             },
           },
+        });
+
+        const allUserMessages = await Message.findAll({
+          where: {
+            [Op.or]: [{ from: user.username }, { to: user.username }],
+          },
+          order: [["createdAt", "DESC"]],
+        });
+
+        users = users.map((u) => {
+          const latestMessage = allUserMessages.find(
+            (message) =>
+              message.from === u.username || message.to === u.username
+          );
+          u.latestMessage = latestMessage;
+          return u;
         });
 
         return users;
