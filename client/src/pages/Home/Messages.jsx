@@ -112,7 +112,7 @@ function Messages() {
       </div>
       <div>
         <Form onSubmit={submitMessage}>
-          <Form.Group>
+          <Form.Group className="d-flex align-items-center">
             <Form.Control
               type="text"
               className="message-input rounded-pill p-4 bg-secondary border-0"
@@ -120,6 +120,11 @@ function Messages() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
+            <i
+              className="fas fa-paper-plane fa-2x text-primary ml-2"
+              onClick={submitMessage}
+              role="button"
+            ></i>
           </Form.Group>
         </Form>
       </div>

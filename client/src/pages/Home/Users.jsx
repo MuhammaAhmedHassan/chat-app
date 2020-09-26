@@ -7,6 +7,8 @@ import { useMessageDispatch, useMessageState } from "../../context/message";
 // types
 import { SET_USERS, SET_SELECTED_USER } from "../../context/types";
 
+const noImage = require("../../assets/images/no-img.jpeg");
+
 const GET_USERS = gql`
   query getUsers {
     getUsers {
@@ -61,7 +63,7 @@ function Users() {
             dispatch({ type: SET_SELECTED_USER, payload: user.username })
           }
         >
-          <Image src={user.imageUrl} className="user-image" />
+          <Image src={user.imageUrl || noImage} className="user-image" />
           <div className="d-none d-md-block ml-2">
             <p className="text-success">{user.username}</p>
             <p className="font-weight-light">
