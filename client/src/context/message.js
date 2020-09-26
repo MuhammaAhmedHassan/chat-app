@@ -1,5 +1,10 @@
 import React, { createContext, useReducer, useContext } from "react";
-import { SET_USERS, SET_USER_MESSAGES, SET_SELECTED_USER } from "./types";
+import {
+  SET_USERS,
+  SET_USER_MESSAGES,
+  SET_SELECTED_USER,
+  ADD_MESSAGE,
+} from "./types";
 
 const MessageStateContext = createContext();
 const MessageDispatchContext = createContext();
@@ -9,7 +14,8 @@ const initialState = {
 };
 
 const messageReducer = (state, action) => {
-  let usersCopy;
+  let usersCopy, userIndex;
+  const { username, messages, message } = action.payload;
   switch (action.type) {
     case SET_USERS:
       return {
@@ -18,10 +24,9 @@ const messageReducer = (state, action) => {
       };
 
     case SET_USER_MESSAGES:
-      const { username, messages } = action.payload;
       usersCopy = [...state.users];
 
-      const userIndex = usersCopy.findIndex((u) => u.username === username);
+      userIndex = usersCopy.findIndex((u) => u.username === username);
 
       usersCopy[userIndex] = { ...usersCopy[userIndex], messages };
 
@@ -35,6 +40,22 @@ const messageReducer = (state, action) => {
         ...user,
         selected: user.username === action.payload,
       }));
+
+      return {
+        ...state,
+        users: usersCopy,
+      };
+
+    case ADD_MESSAGE:
+      usersCopy = [...state.users];
+      userIndex = usersCopy.findIndex((u) => u.username === username);
+
+      let newUser = {
+        ...usersCopy[userIndex],
+        messages: [message, ...usersCopy[userIndex].messages],
+      };
+
+      usersCopy[userIndex] = newUser;
 
       return {
         ...state,
