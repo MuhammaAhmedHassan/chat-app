@@ -23,7 +23,7 @@ const LOGIN_USER = gql`
   }
 `;
 
-function Login({ history }) {
+function Login() {
   const [variables, setVariables] = useState({
     username: "",
     password: "",
@@ -42,7 +42,7 @@ function Login({ history }) {
         type: LOGIN,
         payload: data.login,
       });
-      history.push("/");
+      window.location.href = "/";
     },
   });
 
